@@ -65,13 +65,13 @@ void measure_resolution_rdtsc(int iterations, int ns_max){
 
 void measure_latency_clock_gettime(int iterations) {
     struct timespec ts;
-    clock_t total_time = clock();
+    clock_t start_time = clock();
 
     for (int i = 0; i < iterations; i++){
         clock_gettime(CLOCK_MONOTONIC, &ts); //read timer
     }
 
-    total_time = clock() -total_time;
+    clock_t total_time = clock() - start_time;
     //printf("clock_gettime() latency: %f ns per read\n", (double)total_time / CLOCKS_PER_SEC / iterations * 1e9);
 }
 
@@ -136,7 +136,7 @@ void measure_resolution_times(int iterations, int ns_max){
 int main(int argc, char *argv[]){
 
     int iterations = 10 * 1000 * 1000;
-    int ns_max = 1000;
+    int ns_max = 50;
 
     int choice = atoi(argv[1]);
 
