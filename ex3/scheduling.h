@@ -34,4 +34,5 @@ struct Task
     int totalRuntime;   // In some imaginary integer time unit
     int startTime;      // In some imaginary integer time unit
     int currentRuntime; // In some imaginary integer time unit
+    int Qnumber;
 };

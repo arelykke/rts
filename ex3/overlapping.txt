@@ -1,0 +1,6 @@
+# ID arrival_time total_runtime
+0 0 100
+1 10 40
+2 20 80
+3 30 20
+4 40 60
