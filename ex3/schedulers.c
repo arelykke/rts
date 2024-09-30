@@ -8,6 +8,32 @@
 #include "schedulers.h"
 #include <limits.h>
 
+// for debugging
+const char* getStateString(enum taskState state)
+{
+    switch (state)
+    {
+    case idle:
+        return "idle";
+    case running:
+        return "running";
+    case preempted:
+        return "preempted";
+    case finished:
+        return "finished";
+    default:
+        return "unknown";
+    }
+}
+
+void printTask2(struct Task* task)
+{   
+    printf("ID: %d    runtime: %d/%d    arrived: %d     started: %d   |   state: %s", 
+    task->ID, task->currentRuntime, task->totalRuntime, task->arrivalTime, task->startTime, getStateString(task->state));
+    printf("\n");
+}
+    
+
 void set_task_state(struct Task *task, enum taskState taskNewState)
 {
     pthread_mutex_lock(&taskStateMutex);
@@ -53,6 +79,7 @@ void round_robin(struct Task **tasks, int taskCount, int timeout, int quantum)
             tasks[taskIndex]->startTime = globalTime;
         set_task_state(tasks[taskIndex], running);
 
+
         // Wait for the quantum interval
         wait_for_rescheduling(quantum, tasks[taskIndex]);
 
@@ -71,242 +98,389 @@ void round_robin(struct Task **tasks, int taskCount, int timeout, int quantum)
     } while (globalTime < timeout);
 }
 
-// Implement your schedulers here!
+
 void first_come_first_served(struct Task **tasks, int taskCount, int timeout)
 {
-    // Implement your solution here
-
-    // sort by arrival time
-    for(int i = 0; i < taskCount - 1; i++){
-        for(int j = i + 1; j < taskCount; j++){
-            if(tasks[i]->arrivalTime > tasks[j]->arrivalTime){
-                struct Task *temp = tasks[j];
-                tasks[i] = tasks[j];
-                tasks[j] = temp;
-            }
-        }
-    }
-
-    for(int i = 0; i < taskCount; i++){
-        struct Task *currentTask = tasks[i];
-
-        //wait for task to arrive
-        while(globalTime < currentTask->arrivalTime){
-            usleep(timeUnitUs);
-        }
-
-        // set the task as running and track start time
-        if(currentTask->startTime == -1){
-            currentTask->startTime = globalTime;
-        }
-
-        set_task_state(currentTask, running);
-
-        // run the task to completion (non-preemptive)
-        while(currentTask->currentRuntime < currentTask->totalRuntime){
-            usleep(timeUnitUs);
-            pthread_mutex_lock(&timeMutex);
-            globalTime++;
-            if (currentTask->currentRuntime < currentTask->totalRuntime)
-            {
-                currentTask->currentRuntime++;
-            }
-            pthread_mutex_unlock(&timeMutex);
-        }
-
-        set_task_state(currentTask, finished);
-
-        if(globalTime >= timeout){
-            break;
-        }
-    }
-}
-void shortest_process_next(struct Task **tasks, int taskCount, int timeout)
-{
-    // Implement your solution here
-    int completedTasks = 0;
-    while (completedTasks < taskCount && globalTime < timeout)
+    printf("List of tasks:\n");
+    for (int i = 0; i < taskCount; i++)
     {
-            struct Task *shortestTask = NULL;
+        printTask2(tasks[i]);
+    }
+    printf("\n\n\nStart simulation\n");
+    int finishedTasks = 0;
 
-        for(int i = 0; i < taskCount; i++)
+    while (finishedTasks < taskCount && globalTime < timeout)
+    {
+        // pointer for task to be executed
+        struct Task *firstTask = NULL;
+
+        for (int t = 0; t < taskCount; t++)
         {
-            struct Task *task = tasks[i];
-
-            if(task->arrivalTime <= globalTime && task->state != finished)
+            struct Task *task = tasks[t];
+            if (task->arrivalTime <= globalTime && task->state != finished)
             {
-                if(shortestTask == NULL || task->totalRuntime < shortestTask->totalRuntime)
+                if(firstTask == NULL || task->arrivalTime < firstTask->arrivalTime)
                 {
-                    shortestTask = task;
+                    firstTask = task;
+                    //printf("Task aquired at time %d      ", globalTime);
+                    //printTask2(firstTask);
                 }
             }
         }
 
-        if (shortestTask == NULL)
+        // no tasks arrived, inc time
+        if (firstTask == NULL)
         {
-            usleep(timeUnitUs);
+            printf("%d          | no new tasks...\n", globalTime);
             pthread_mutex_lock(&timeMutex);
             globalTime++;
             pthread_mutex_unlock(&timeMutex);
             continue;
         }
+        else
+        {
+            printf("%d          | task arrived...       |   ", globalTime);
+            printTask2(firstTask);
+        }
 
+        // run first task
+        if (firstTask->startTime == -1)
+        {
+            firstTask->startTime = globalTime;
+        }
+        set_task_state(firstTask, running);
+        printf("%d          | executing task...     |   ", globalTime);
+        printTask2(firstTask);
+
+
+        while (firstTask->currentRuntime < firstTask->totalRuntime)
+        {
+            pthread_mutex_lock(&timeMutex);
+            if (firstTask->currentRuntime < firstTask->totalRuntime)
+            {
+                globalTime++;
+                firstTask->currentRuntime++;
+            } 
+            pthread_mutex_unlock(&timeMutex);
+        }
+        printf("\n+%d runtime\n\n", firstTask->currentRuntime);
+
+        set_task_state(firstTask, finished);
+        printf("%d          | task finished...      |   ", globalTime);
+        printTask2(firstTask);
+        printf("\n\n");
+        finishedTasks++;
+        
+    }
+}
+
+
+
+
+
+void shortest_process_next(struct Task **tasks, int taskCount, int timeout)
+{
+    printf("List of tasks:\n");
+    for (int i = 0; i < taskCount; i++)
+    {
+        printTask2(tasks[i]);
+    }
+    printf("\n\n\nStart simulation\n");
+
+    int finishedTasks = 0;
+
+    struct Task *queue[taskCount];
+    int qIndex = 0;
+
+    while (finishedTasks < taskCount && globalTime < timeout)
+    {
+        struct Task *shortestTask = NULL;
+
+        qIndex = 0;
+
+        // tasks arriving
+        for (int t = 0; t < taskCount; t++)
+        {   
+            struct Task *task = tasks[t];
+            if (task->arrivalTime <= globalTime && task->state != finished)
+            {   
+                queue[qIndex++] = task;
+            }            
+        }
+
+        // sorting task queue
+        if (qIndex > 0)
+        {
+            shortestTask = queue[0];
+            for (int t = 0; t < qIndex; t++)
+            {
+                if (queue[t]->totalRuntime < shortestTask->totalRuntime)
+                {
+                    shortestTask = queue[t];
+                }
+            }
+        }
+        
+
+        // no tasks arrived, inc time
+        if (shortestTask == NULL)
+        {
+            printf("%d          | no new tasks...\n", globalTime);
+            pthread_mutex_lock(&timeMutex);
+            globalTime++;
+            pthread_mutex_unlock(&timeMutex);
+            continue;
+        }
+        else
+        {
+            printf("%d          | task arrived...       |   ", globalTime);
+            printTask2(shortestTask);
+        }
+
+        // run shortest task
         if (shortestTask->startTime == -1)
         {
             shortestTask->startTime = globalTime;
         }
         set_task_state(shortestTask, running);
+        printf("%d          | executing task...     |   ", globalTime);
+        printTask2(shortestTask);
 
         while (shortestTask->currentRuntime < shortestTask->totalRuntime)
         {
-            usleep(timeUnitUs);
             pthread_mutex_lock(&timeMutex);
-            globalTime++;
             if (shortestTask->currentRuntime < shortestTask->totalRuntime)
-            {
+            {   
+                globalTime++;
                 shortestTask->currentRuntime++;
             }
             pthread_mutex_unlock(&timeMutex);
-        
         }
 
+        printf("\n+%d runtime\n\n", shortestTask->currentRuntime);
+
         set_task_state(shortestTask, finished);
-        completedTasks++;
+        printf("%d          | task finished...      |   ", globalTime);
+        printTask2(shortestTask);
+        printf("\n\n");
+        finishedTasks++;
     }
 
 }
+
 void highest_response_ratio_next(struct Task **tasks, int taskCount, int timeout)
 {
-    // Implement your solution here
-
-    int completedTasks = 0;
-
-    while (completedTasks < taskCount && globalTime < timeout)
+    printf("List of tasks:\n");
+    for (int i = 0; i < taskCount; i++)
     {
-        struct Task *highestRatioTask = NULL;
-        double highestResponseRatio = -1.0;
+        printTask2(tasks[i]);
+    }
+    printf("\n\n\nStart simulation\n");
 
-        // sort task based on response ratio
-        for (int i = 0; i < taskCount; i++)
+    int finishedTasks = 0;
+
+    struct Task *queue[taskCount];
+    int qIndex = 0;
+
+    while (finishedTasks < taskCount && globalTime < timeout)
+    {
+        struct Task *selectedTask = NULL;
+        qIndex = 0;
+
+        // tasks arriving
+        for (int t = 0; t < taskCount; t++)
         {
-            struct Task *task = tasks[i];
-
-            // task must have arrived but not finished yet
+            struct Task *task = tasks[t];
             if (task->arrivalTime <= globalTime && task->state != finished)
             {
-                // calc wait time and response ratio
-                int waitingTime = globalTime - task->arrivalTime;
-                double responseRatio = (waitingTime + task->totalRuntime) / (double)task->totalRuntime;
-
-                // check if this has the highest response ratio so far
-                if (responseRatio > highestResponseRatio)
-                {
-                    highestResponseRatio = responseRatio;
-                    highestRatioTask = task;
-                }
+                queue[qIndex++] = task;
             }
         }
 
-        // if no task has arrived yet, wait for the next one
-        if (highestRatioTask == NULL)
+        // select task with lower response ratio
+        if (qIndex > 0)
         {
-            usleep(timeUnitUs);
+            int maxRatioIndex = 0;
+            float maxResponseRatio = (globalTime - queue[0]->arrivalTime + queue[0]->totalRuntime) / (float)(queue[0]->totalRuntime);
+
+            printf("\nresponse ratios: ");
+            for (int t = 0; t < qIndex; t++)
+            {
+                struct Task *task = queue[t];
+                int waitingTime = globalTime - task->arrivalTime;
+                float responseRatio = (float)(waitingTime + task->totalRuntime) / task->totalRuntime;
+                printf(" %f ", responseRatio);
+
+                if (responseRatio > maxResponseRatio)
+                {
+                    maxResponseRatio = responseRatio;
+                    maxRatioIndex = t;
+                }
+            }
+            printf("\nSelected response ratio: %f\n\n", maxResponseRatio);
+            selectedTask = queue[maxRatioIndex];
+        }
+
+         // no tasks arrived, inc time
+        if (selectedTask == NULL)
+        {
+            printf("%d          | no new tasks...\n", globalTime);
             pthread_mutex_lock(&timeMutex);
             globalTime++;
             pthread_mutex_unlock(&timeMutex);
             continue;
         }
-
-        // set the task as running and track start time
-        if (highestRatioTask->startTime == -1)
+        else
         {
-            highestRatioTask->startTime = globalTime;
+            printf("%d          | task arrived...       |   ", globalTime);
+            printTask2(selectedTask);
         }
 
-        set_task_state(highestRatioTask, running);
-
-        // run the task to completion
-        while (highestRatioTask->currentRuntime < highestRatioTask->totalRuntime)
+        // run selected task
+        if (selectedTask->startTime == -1)
         {
-            usleep(timeUnitUs);
+            selectedTask->startTime = globalTime;
+        }
+        set_task_state(selectedTask, running);
+        printf("%d          | executing task...     |   ", globalTime);
+        printTask2(selectedTask);
+
+        while (selectedTask->currentRuntime < selectedTask->totalRuntime)
+        {
             pthread_mutex_lock(&timeMutex);
-            globalTime++;
-            if (highestRatioTask->currentRuntime < highestRatioTask->totalRuntime)
+            if (selectedTask->currentRuntime < selectedTask->totalRuntime)
             {
-                highestRatioTask->currentRuntime++;
+                globalTime++;
+                selectedTask->currentRuntime++;
             }
             pthread_mutex_unlock(&timeMutex);
         }
 
-        set_task_state(highestRatioTask, finished);
-        completedTasks++;
+        printf("\n+%d runtime\n\n", selectedTask->currentRuntime);
+
+        set_task_state(selectedTask, finished);
+        printf("%d          | task finished...      |   ", globalTime);
+        printTask2(selectedTask);
+        printf("\n\n");
+        finishedTasks++;
+
     }
 }
+
 void shortest_remaining_time(struct Task **tasks, int taskCount, int timeout, int quantum)
 {
-    // Implement your solution here
-
-    int completedTasks = 0;
-
-    while (completedTasks < taskCount && globalTime < timeout)
+       printf("List of tasks:\n");
+    for (int i = 0; i < taskCount; i++)
     {
-        struct Task *shortestTask = NULL;
-        int shortestRemainingTime = INT_MAX;
+        printTask2(tasks[i]);
+    }
+    printf("\n\n\nStart simulation\n");
 
-        // find the task with the shortest remaining time that has arrived and is not finished
-        for (int i = 0; i < taskCount; i++)
+    int finishedTasks = 0;
+
+    struct Task *queue[taskCount];
+    int qIndex = 0;
+
+    while(finishedTasks < taskCount && globalTime < timeout)
+    {
+        struct Task *selectedTask = NULL;
+        qIndex = 0;
+
+        // tasks arriving
+        for (int t = 0; t < taskCount; t++)
         {
-            struct Task *task = tasks[i];
-
-            // task must have arrived and not be finished yet
+            struct Task *task = tasks[t];
             if (task->arrivalTime <= globalTime && task->state != finished)
             {
-                int remainingTime = task->totalRuntime - task->currentRuntime;
+                queue[qIndex++] = task;
+            }
+        }
 
-                // check if this task has the shortest remaining time so far
+        // sort task queue based on shortest remaining time
+        if (qIndex > 0)
+        {
+            int shortestRemainingTime = (queue[0]->totalRuntime - queue[0]->currentRuntime);
+            int srtIndex = 0;
+            
+
+            printf("\nQueue: ");
+            printf("\n______________________________________________________________________\n");
+            for (int t = 0; t < qIndex; t++)
+            {
+                struct Task *task = queue[t];
+                int remainingTime = (task->totalRuntime - task->currentRuntime);
+                printf("\nremaining time: %d          | ", remainingTime);
+                printTask2(queue[t]);
+
                 if (remainingTime < shortestRemainingTime)
                 {
                     shortestRemainingTime = remainingTime;
-                    shortestTask = task;
+                    srtIndex = t;
                 }
             }
+            printf("\n______________________________________________________________________\n");
+
+            printf("\nSelected SRT: %d\n", shortestRemainingTime);
+            selectedTask = queue[srtIndex];
+            printf("\nSelected task with remaining time %d \n", shortestRemainingTime);
+            printTask2(selectedTask);
+            printf("\n______________________________________________________________________\n");
         }
 
-        // if no task has arrived yet, wait for the next one
-        if (shortestTask == NULL)
+        // no tasks arrived, inc time
+        if (selectedTask == NULL)
         {
-            usleep(timeUnitUs);
+            printf("%d          | no new tasks...\n", globalTime);
             pthread_mutex_lock(&timeMutex);
             globalTime++;
             pthread_mutex_unlock(&timeMutex);
             continue;
         }
-
-        // set the task as running and track start time
-        if (shortestTask->startTime == -1)
+        else
         {
-            shortestTask->startTime = globalTime;
+            printf("%d          | task arrived...       |   ", globalTime);
+            printTask2(selectedTask);
         }
 
-        set_task_state(shortestTask, running);
-
-        // run the task for one time unit or until its finished
-        usleep(timeUnitUs);
-        pthread_mutex_lock(&timeMutex);
-        globalTime++;
-        if (shortestTask->currentRuntime < shortestTask->totalRuntime)
+        // execute slected task
+        if (selectedTask->startTime == -1) selectedTask->startTime = globalTime;
+        set_task_state(selectedTask, running);
+        printf("%d          | executing task...     |   ", globalTime);
+        printTask2(selectedTask);
+        int runtime = (selectedTask->totalRuntime - selectedTask->currentRuntime < quantum) ? selectedTask->totalRuntime - selectedTask->currentRuntime : quantum;
+        int execStartTime = globalTime;
+        while (globalTime < execStartTime + runtime)
         {
-            shortestTask->currentRuntime++;
+            // update time
+            pthread_mutex_lock(&timeMutex);
+            if (selectedTask->currentRuntime < selectedTask->totalRuntime)
+            {
+                globalTime++;
+                selectedTask->currentRuntime++;
+            }
+            pthread_mutex_unlock(&timeMutex);
         }
-        pthread_mutex_unlock(&timeMutex);
+        printf("\n+%d runtime\n\n", selectedTask->currentRuntime);
 
-        // check if task has finished
-        if (shortestTask->currentRuntime >= shortestTask->totalRuntime)
+        // check if task is finished
+        if (selectedTask->currentRuntime >= selectedTask->totalRuntime)
         {
-            set_task_state(shortestTask, finished);
-            completedTasks++;
+            set_task_state(selectedTask, finished);
+            printf("%d          | task finished...      |   ", globalTime);
+            printTask2(selectedTask);
+            printf("\n\n");
+            finishedTasks++;
         }
+        else
+        {
+            set_task_state(selectedTask, preempted);
+            printf("%d          | task preemted...      |   ", globalTime);
+            printTask2(selectedTask);
+            printf("\n\n");
+        }
+
     }
+
 }
 
 
@@ -374,22 +548,7 @@ struct Task* dequeue(struct Queue* q)
 }
 
 
-const char* getStateString(enum taskState state)
-{
-    switch (state)
-    {
-    case idle:
-        return "idle";
-    case running:
-        return "running";
-    case preempted:
-        return "preempted";
-    case finished:
-        return "finished";
-    default:
-        return "unknown";
-    }
-}
+
 
 // for debugging
 void printTask(struct Task* task)
@@ -567,6 +726,5 @@ void feedback(struct Task **tasks, int taskCount, int timeout, int quantum)
         printQueue(&queues[i], i);
     }
     getchar();
-
 
 }
