@@ -1,24 +1,15 @@
 0: Task 0: initiated in idle 
-0: Task 3: initiated in idle 
-0: Task 4: initiated in idle 
-0: Task 5: initiated in idle 
 0: Task 1: initiated in idle 
 0: Task 2: initiated in idle 
-0: Task 6: initiated in idle 
-0: Task 7: initiated in idle 
-78: Task 0: idle -> finished, total time worked: 10 
-79: Task 0: running -> finished, total time worked: 10 
-78: Task 3: idle -> finished, total time worked: 8 
-79: Task 3: running -> finished, total time worked: 8 
-78: Task 5: idle -> finished, total time worked: 7 
-78: Task 6: idle -> finished, total time worked: 9 
-79: Task 6: running -> finished, total time worked: 9 
-78: Task 1: idle -> finished, total time worked: 15 
-79: Task 1: running -> finished, total time worked: 15 
-78: Task 2: idle -> finished, total time worked: 5 
-79: Task 2: running -> finished, total time worked: 5 
-79: Task 5: running -> finished, total time worked: 7 
-78: Task 4: idle -> finished, total time worked: 12 
-79: Task 4: running -> finished, total time worked: 12 
-78: Task 7: idle -> finished, total time worked: 3 
-79: Task 7: running -> finished, total time worked: 3 
+0: Task 3: initiated in idle 
+0: Task 4: initiated in idle 
+0: Task 0: idle -> running, total time worked: 0 
+150: Task 0: running -> finished, total time worked: 150 
+150: Task 1: idle -> running, total time worked: 0 
+210: Task 1: running -> finished, total time worked: 60 
+210: Task 2: idle -> running, total time worked: 0 
+250: Task 2: running -> finished, total time worked: 40 
+250: Task 3: idle -> running, total time worked: 0 
+300: Task 3: running -> finished, total time worked: 50 
+300: Task 4: idle -> running, total time worked: 0 
+320: Task 4: running -> finished, total time worked: 20 

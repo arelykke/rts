@@ -111,10 +111,8 @@ int main(int argc, char *argv[])
 	}
 
 	// Read tasks from the file
-	//struct Task **tasks = read_tasks_from_file("tasks.txt", &taskCount);
-	struct Task **tasks = read_tasks_from_file("arrive_at_same_time.txt", &taskCount);
-	//struct Task **tasks = read_tasks_from_file("overlapping.txt", &taskCount);
-	//truct Task **tasks = read_tasks_from_file("staggered_arrivals.txt", &taskCount);
+	struct Task **tasks = read_tasks_from_file("tasks.txt", &taskCount);
+
 
 	// Create task threads
 	pthread_t threads[taskCount];
