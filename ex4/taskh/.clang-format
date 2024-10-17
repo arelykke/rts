@@ -1,0 +1,23 @@
+BasedOnStyle: LLVM
+ColumnLimit: 1000                       # Allows a bit more room for longer lines
+IndentWidth: 4
+BreakBeforeBraces: Allman            # Braces on a new line for clear block separation
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AlwaysBreakTemplateDeclarations: true
+PointerAlignment: Right               # Aligns pointers to the type for readability
+
+AlignOperands: Align
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+
