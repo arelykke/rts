@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include "barrier.h"
 
-// mutexes or semaphores are not used to demonstrate issues with threading
+// mutexes or semaphores are not used, in order to demonstrate issues with threading
 
 
-int iterations = 1000 * 1000;
+int iterations = 1e6;
 long global_i = 0;
 
 const int threadCount = 2;

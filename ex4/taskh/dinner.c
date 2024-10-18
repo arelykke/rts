@@ -1,6 +1,5 @@
 #include "philo.h"
 
-// TODO
 void thinking(t_philo *philo, bool pre_simulation)
 {
     long time_eat;
@@ -26,6 +25,10 @@ void thinking(t_philo *philo, bool pre_simulation)
     precise_usleep(time_think * 0.42, philo->table);
 }
 
+/**
+ * Ad hoc function for handling
+ * a single philo
+ */
 void *lone_philo(void *arg)
 {
     t_philo *philo;
@@ -94,7 +97,7 @@ void *dinner_simulation(void *data)
     while (!simulation_finished(philo->table))
     {
         // 1) philo full
-        if (philo->full) // TODO thread safe?
+        if (philo->full)
             break;
 
         // 2) eat
@@ -104,7 +107,7 @@ void *dinner_simulation(void *data)
         write_status(SLEEPING, philo, DEBUG_MODE);
         precise_usleep(philo->table->time_to_sleep, philo->table);
         // 4) think
-        thinking(philo, false); // TODO
+        thinking(philo, false);
     }
     return (NULL);
 }
@@ -114,9 +117,9 @@ void *dinner_simulation(void *data)
  *
  * 0) if no meals, return ->[0]
  * 1) if only one philo -> ad hoc func
- * 2) ceate all threads, all philos
- * 3) ceate a monitor thread
- * 4) sync the begginning of the sim
+ * 2) create all threads, all philos
+ * 3) create a monitor thread
+ * 4) sync the beginning of the sim
  *          pthread_create -> philo starts running
  *          every philo start simultaneously
  * 5) JOIN everyone

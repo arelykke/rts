@@ -1,7 +1,8 @@
 #include "philo.h"
 
 /**
- * ./philo 5 800 200 200 [5]
+ * ./philo  5           800         200         200             [5]
+ *          n_phlios    t_to_die    t_to_eat    t_to_sleep      n_meals (optional)
  */
 int main(int ac, char **av)
 {

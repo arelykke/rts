@@ -43,6 +43,7 @@ void barrier_destroy(barrier_t *barrier)
 // bs for debugging
 int getThreadID()
 {
+    
     // convert thread to som kind of int that more easy can represent thread ID
-    return (int)(uintptr_t)pthread_self();
+    return (int)(uintptr_t)pthread_self()%100;
 }
