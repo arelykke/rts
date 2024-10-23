@@ -421,20 +421,7 @@ void shortest_remaining_time(struct Task **tasks, int taskCount, int timeout, in
         printf("%d          | executing task...     |   ", globalTime);
         printTask2(selectedTask);
         int runtime = (selectedTask->totalRuntime - selectedTask->currentRuntime < quantum) ? selectedTask->totalRuntime - selectedTask->currentRuntime : quantum;
-        /*
-        int execStartTime = globalTime;
-        while (globalTime < execStartTime + runtime)
-        {
-            // update time
-            pthread_mutex_lock(&timeMutex);
-            if (selectedTask->currentRuntime < selectedTask->totalRuntime)
-            {
-                globalTime++;
-                selectedTask->currentRuntime++;
-            }
-            pthread_mutex_unlock(&timeMutex);
-        }
-        */
+
         wait_for_rescheduling(runtime, selectedTask);
         printf("\n+%d runtime\n\n", runtime);
 
