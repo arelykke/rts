@@ -32,7 +32,10 @@ void* inc(void* arg)
     }
 
     printf("Thread %d done counting.\n", getThreadID());
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
     printf("Global: %ld  |   Local: %d\n", global_i, local_i);
+    dispatch_semaphore_signal(semaphore);
+
     return NULL;
 }
 
