@@ -1,3 +1,9 @@
 [submodule "ex5/excercise-5-tuesday-11"]
 	path = ex5/excercise-5-tuesday-11
 	url = https://github.com/TTK4147/exercise-5-tuesday-11.git
+[submodule "ex6/ex6"]
+	path = ex6/ex6
+	url = https://github.com/TTK4147/exercise-5-tuesday-11.git
+[submodule "ex6/exercise-6-tuesday-11"]
+	path = ex6/exercise-6-tuesday-11
+	url = https://github.com/TTK4147/exercise-6-tuesday-11.git
